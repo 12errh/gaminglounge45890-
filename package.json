@@ -62,7 +62,7 @@
     "ai": "latest",
     "openai-edge": "latest",
     "@supabase/supabase-js": "latest",
-    "@supabase/auth-helpers-nextjs": "latest"
+    "nodemailer": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

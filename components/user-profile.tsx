@@ -1,52 +1,43 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { X, Trophy, Star, Clock, Edit2, Save } from 'lucide-react'
+"use client"
+
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { X, Trophy, Star, Clock, Edit2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { supabase } from '@/lib/supabase'
+import { supabase } from "@/lib/supabase"
 
 interface UserProfileProps {
   setShowProfile: (show: boolean) => void
+  user: any
 }
 
-export function UserProfile({ setShowProfile }: UserProfileProps) {
-  const [user, setUser] = useState<any>(null)
+export function UserProfile({ setShowProfile, user }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [nickname, setNickname] = useState('')
-  const [favoriteGame, setFavoriteGame] = useState('')
-  const [gamingExperience, setGamingExperience] = useState('')
-
-  useEffect(() => {
-    fetchUserProfile()
-  }, [])
-
-  const fetchUserProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      setUser(user)
-      setNickname(user.user_metadata.nickname || '')
-      setFavoriteGame(user.user_metadata.favorite_game || '')
-      setGamingExperience(user.user_metadata.gaming_experience || '')
-    }
-  }
+  const [nickname, setNickname] = useState(user.nickname)
+  const [favoriteGame, setFavoriteGame] = useState(user.favorite_game)
+  const [gamingExperience, setGamingExperience] = useState(user.gaming_experience)
 
   const handleSave = async () => {
-    const { data, error } = await supabase.auth.updateUser({
-      data: { nickname, favorite_game: favoriteGame, gaming_experience: gamingExperience }
-    })
+    const { data, error } = await supabase
+      .from("users")
+      .update({ nickname, favorite_game: favoriteGame, gaming_experience: gamingExperience })
+      .eq("id", user.id)
 
     if (error) {
-      console.error('Error updating user:', error)
+      console.error("Error updating user:", error)
     } else {
-      setUser(data.user)
       setIsEditing(false)
+      // Update local storage with new user data
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...user, nickname, favorite_game: favoriteGame, gaming_experience: gamingExperience }),
+      )
     }
   }
-
-  if (!user) return null
 
   return (
     <motion.div
@@ -84,7 +75,7 @@ export function UserProfile({ setShowProfile }: UserProfileProps) {
                 ) : (
                   <h2 className="text-2xl font-bold text-purple-100">{nickname}</h2>
                 )}
-                <p className="text-purple-300">{user.email}</p>
+                <p className="text-purple-300">Auth Key: {user.auth_key}</p>
               </div>
             </div>
             <div className="grid gap-4 mb-4">

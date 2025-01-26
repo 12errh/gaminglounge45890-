@@ -1,35 +1,40 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Sidebar } from './sidebar'
-import { ChatArea } from './chat-area'
-import { GameIntegration } from './game-integration'
-import { Header } from './header'
-import { GameLauncher } from './game-launcher'
-import { UserProfile } from './user-profile'
-import { NotificationCenter } from './notification-center'
-import { VoiceCall } from './voice-call'
-import { AIChat } from './ai-chat'
-import { subscribeToOnlinePlayers } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Sidebar } from "./sidebar"
+import { ChatArea } from "./chat-area"
+import { GameIntegration } from "./game-integration"
+import { Header } from "./header"
+import { GameLauncher } from "./game-launcher"
+import { UserProfile } from "./user-profile"
+import { NotificationCenter } from "./notification-center"
+import { VoiceCall } from "./voice-call"
+import { AIChat } from "./ai-chat"
+import { subscribeToOnlinePlayers } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+import { initializeSupabase } from "@/lib/supabase"
 
 export default function R1ChatRoom() {
-  const [currentChannel, setCurrentChannel] = useState('general')
+  const [currentChannel, setCurrentChannel] = useState("general")
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [showAIChat, setShowAIChat] = useState(false)
   const [onlinePlayers, setOnlinePlayers] = useState<{ username: string }[]>([])
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
+      await initializeSupabase()
+      const userStr = localStorage.getItem("user")
+      if (!userStr) {
+        router.push("/login")
+      } else {
+        setUser(JSON.parse(userStr))
       }
     }
     checkUser()
@@ -37,19 +42,23 @@ export default function R1ChatRoom() {
 
   useEffect(() => {
     const unsubscribe = subscribeToOnlinePlayers((players) => {
-      setOnlinePlayers(players);
-    });
+      setOnlinePlayers(players)
+    })
 
     return () => {
-      unsubscribe();
-    };
-  }, []);
+      unsubscribe()
+    }
+  }, [])
+
+  if (!user) {
+    return null // or a loading spinner
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white overflow-hidden">
-      <Header 
-        isDarkMode={isDarkMode} 
-        setIsDarkMode={setIsDarkMode} 
+      <Header
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
         setShowProfile={setShowProfile}
         setShowNotifications={setShowNotifications}
         setShowSidebar={setShowSidebar}
@@ -59,14 +68,14 @@ export default function R1ChatRoom() {
         <AnimatePresence>
           {showSidebar && (
             <motion.div
-              initial={{ x: '-100%' }}
+              initial={{ x: "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed inset-y-0 left-0 z-50 w-64 lg:relative lg:block"
             >
-              <Sidebar 
-                currentChannel={currentChannel} 
+              <Sidebar
+                currentChannel={currentChannel}
                 setCurrentChannel={setCurrentChannel}
                 setShowSidebar={setShowSidebar}
                 onlinePlayers={onlinePlayers}
@@ -90,12 +99,8 @@ export default function R1ChatRoom() {
       </div>
       <GameLauncher />
       <AnimatePresence>
-        {showProfile && (
-          <UserProfile setShowProfile={setShowProfile} />
-        )}
-        {showNotifications && (
-          <NotificationCenter setShowNotifications={setShowNotifications} />
-        )}
+        {showProfile && <UserProfile setShowProfile={setShowProfile} user={user} />}
+        {showNotifications && <NotificationCenter setShowNotifications={setShowNotifications} />}
       </AnimatePresence>
     </div>
   )
